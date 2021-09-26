@@ -24,12 +24,13 @@ double sc_time_stamp() { return 0; }
 //extern 'C' export "DPI-C" task LOAD_TEST(int TESTID);
 //export "DPI-C" task EVAL_TEST(int TESTID, svBit test_status);
 uint8_t test_status = 0;
-svBitVecVal test_id;
+svBitVecVal test_id = 0;
 svLogicVecVal* test_id1;
 
 int main(int argc, char** argv, char** env) {
     // This is a more complicated example, please also see the simpler examples/make_hello_c.
 
+    uint8_t fail_tst_cnt = 0;
     // Prevent unused variable warnings
     if (false && argc && argv && env) {}
 
@@ -72,7 +73,7 @@ int main(int argc, char** argv, char** env) {
 
     // Simulate until $finish
     //while (!contextp->gotFinish()) {
-    while (count_cyc < 2000 && test_status == 0) {
+    while (test_id < 36) {
         // Historical note, before Verilator 4.200 Verilated::gotFinish()
         // was used above in place of contextp->gotFinish().
         // Most of the contextp-> calls can use Verilated:: calls instead;
@@ -101,19 +102,29 @@ int main(int argc, char** argv, char** env) {
         //    }
         //}
         //int test_id1 = 0;
-        if(count_cyc > 100) {
-            test_id = 0;
+        if(count_cyc == 10 && top->clock) {
+            //test_id = 0;
             //printf("Before svGetScopeFromName\n");
             svSetScope(svGetScopeFromName("TOP.testbench"));
             //printf("Before LOAD_TEST\n");
             LOAD_TEST(&test_id);
             top->Reset_n = !0;
-        } else if (count_cyc > 200) {
-            test_id = 0;
+        } else if(count_cyc > 10) {
+            svSetScope(svGetScopeFromName("TOP.testbench"));
             EVAL_TEST(&test_id, &test_status);
+            if(test_status == 1 || count_cyc >= 2000) {
+                if(count_cyc >= 2000) {
+                    VL_PRINTF("\n*****Test Timeout******; TESTID:%d\n",test_id);
+                    fail_tst_cnt++;
+                }
+                test_id++;
+                test_status = 0;
+                count_cyc = 0;
+                top->Reset_n = 0;
+            }
         }
 
-        count_cyc ++;
+        if(top->clock == 1) count_cyc ++;
         // Evaluate model
         // (If you have multiple models being simulated in the same
         // timestep then instead of eval(), call eval_step() on each, then
@@ -122,8 +133,14 @@ int main(int argc, char** argv, char** env) {
 
 
         // Read outputs
-        VL_PRINTF("[%" VL_PRI64 "d] clk=%x rst=%x \n",
+        VL_PRINTF("\r[%" VL_PRI64 "d] clk=%x rstn=%x",
                   contextp->time(), top->clock, top->Reset_n);
+    }
+
+    if(fail_tst_cnt==0) {
+        VL_PRINTF("\nAll Tests Passed\n");
+    } else {
+        VL_PRINTF("\n*****%d Tests Timedout******\n",fail_tst_cnt);
     }
 
     // Final model cleanup

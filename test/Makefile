@@ -81,7 +81,8 @@ alltests_vcd: testbench.vvp
 	@echo ""
 
 
-Vtestbench: testmems
+#Vtestbench: testmems
+Vtestbench:
 	@echo "##############################################################"
 	@echo "-- VERILATE ----------------"
 	$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT)

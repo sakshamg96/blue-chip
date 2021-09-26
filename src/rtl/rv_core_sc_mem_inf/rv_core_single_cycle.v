@@ -46,6 +46,7 @@ module rv_core_single_cycle
     wire [DATA_WIDTH-1:0] rs1_data;
     wire [DATA_WIDTH-1:0] rs2_data;
     wire [ADDR_WIDTH-1:0] imem_addr;
+    wire [ADDR_WIDTH-1:0] imem_addr_next;
     wire [31:0] read_instr;
 
     //Decode
@@ -83,13 +84,14 @@ module rv_core_single_cycle
     rv_pc  #(.DATA_WIDTH(DATA_WIDTH), .ADDR_WIDTH(ADDR_WIDTH)) rv_pc_0 (
         .clk,
         .rst,
-        .imm_gen_i      (imm_gen),
-        .alu_zero_i     (alu_zero),
-        .branch_en_i    (branch_en),
-        .PCIncrSel_i    (PCIncrSel),
-        .opr_a_i        (rs1_data),
-        .imem_addr_o    (imem_addr),
-        .b_type_instr_i (b_type_instr)
+        .imm_gen_i          (imm_gen),
+        .alu_zero_i         (alu_zero),
+        .branch_en_i        (branch_en),
+        .PCIncrSel_i        (PCIncrSel),
+        .opr_a_i            (rs1_data),
+        .imem_addr_o        (imem_addr),
+        .imem_addr_next_o   (imem_addr_next),
+        .b_type_instr_i     (b_type_instr)
     );
 
     //rv_instr_mem #(.ADDR_WIDTH(ADDR_WIDTH)) rv_instr_mem_0 (
@@ -97,7 +99,7 @@ module rv_core_single_cycle
     //    .read_instr_o   (read_instr)
     //);
     assign read_instr = IMEM_data_i;
-    assign IMEM_addr_o = imem_addr;
+    assign IMEM_addr_o = imem_addr_next;
 
     rv_decode rv_decode_0 (
         .instr_i    (read_instr),
@@ -144,6 +146,7 @@ module rv_core_single_cycle
 
     rv_reg_file rv_reg_file_0 (
         .clk,
+        .rst,
         .rs1_addr_i (rs1_addr),
         .rs2_addr_i (rs2_addr),
         .rd_addr_i  (rd_addr),

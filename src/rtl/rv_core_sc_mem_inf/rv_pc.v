@@ -25,11 +25,13 @@ module rv_pc
     input                       PCIncrSel_i,        // Select between jal and jalr
     input  [DATA_WIDTH-1:0]     opr_a_i,            // ALU operand 1 for jal and jalr instructions
     output [ADDR_WIDTH-1:0]     imem_addr_o,         // Instruction memory address
+    output [ADDR_WIDTH-1:0]     imem_addr_next_o,         // Instruction memory address
     input                       b_type_instr_i       // B-type instruction 
 );
 
     reg [ADDR_WIDTH-1:0] instr_cntr;
     wire [ADDR_WIDTH-1:0] instr_cntr_c;
+    bit rst_sync;
 
     always @(posedge clk)
     begin
@@ -41,12 +43,21 @@ module rv_pc
         end
     end
 
+    always @(posedge clk) begin
+        rst_sync <= rst;
+    end
+
     wire [ADDR_WIDTH-1:0] PCIncr;
+    wire signed [12:0] imm_gen_sign;
 
-assign PCIncr = PCIncrSel_i ? (opr_a_i + (imm_gen_i<<1)) : ((instr_cntr - 4) + (imm_gen_i<<1));     //-4 because instr_cnt already incremented during fetch
+    assign imm_gen_sign[12:0] = imm_gen_i[12:0]<<1;
 
-    assign instr_cntr_c = (branch_en_i & (alu_zero_i | !b_type_instr_i) ) ? PCIncr : (instr_cntr + 4);
+    assign PCIncr = PCIncrSel_i ? (opr_a_i + {{19{imm_gen_sign[12]}},imm_gen_sign}) 
+                                    : (instr_cntr + {{19{imm_gen_sign[12]}},imm_gen_sign});     //-4 because instr_cnt already incremented during fetch
+
+    assign instr_cntr_c = rst_sync == 1'b1 ? 'b0 : (branch_en_i & (alu_zero_i | !b_type_instr_i) ) ? PCIncr : (instr_cntr + 4);
 
     assign imem_addr_o = instr_cntr;
+    assign imem_addr_next_o = instr_cntr_c;
 
 endmodule

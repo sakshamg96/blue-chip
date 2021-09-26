@@ -64,6 +64,7 @@ module rv_alu
   // This would be later assigned to the actual output
   // --------------------------------------------------------
   logic [DATA_WIDTH-1:0] alu_res;
+  logic alu_zero;
 
   // --------------------------------------------------------
   // Signed opeartions can simply be assigned to the current
@@ -83,6 +84,8 @@ module rv_alu
   // ISA. See section "2.4 Integer Computational Instructions"
   // --------------------------------------------------------
   always@(*) begin
+    alu_zero = 1'b0;
+    alu_res = 'b0;
     case (op_sel_i)
       OP_ADD : alu_res = opr_a_i + opr_b_i;
       OP_SUB : alu_res = opr_a_i - opr_b_i;
@@ -92,12 +95,21 @@ module rv_alu
       OP_SLL : alu_res = opr_a_i << opr_b_i[4:0];
       OP_SRL : alu_res = opr_a_i >> opr_b_i[4:0];
       OP_SRA : alu_res = sign_opr_a >>> opr_b_i[4:0];
-      OP_SLT : alu_res = {31'h0, sign_opr_a <= sign_opr_b};
-      OP_SGT : alu_res = {31'h0, sign_opr_a >= sign_opr_b};
-      OP_EQL : alu_res = {31'h0, opr_a_i == opr_b_i};
-      OP_NEQL : alu_res = {31'h0, opr_a_i != opr_b_i};
-      OP_ULT : alu_res = {31'h0, opr_a_i <= opr_b_i};
-      OP_UGT : alu_res = {31'h0, opr_a_i >= opr_b_i};
+
+      //OP_SLT : alu_res = {31'h0, sign_opr_a <= sign_opr_b};
+      //OP_SGT : alu_res = {31'h0, sign_opr_a >= sign_opr_b};
+      //OP_EQL : alu_res = {31'h0, opr_a_i == opr_b_i};
+      //OP_NEQL : alu_res = {31'h0, opr_a_i != opr_b_i};
+      //OP_ULT : alu_res = {31'h0, opr_a_i <= opr_b_i};
+      //OP_UGT : alu_res = {31'h0, opr_a_i >= opr_b_i};
+
+      OP_SLT : alu_zero = sign_opr_a <= sign_opr_b;
+      OP_SGT : alu_zero = sign_opr_a >= sign_opr_b;
+      OP_EQL : alu_zero = opr_a_i == opr_b_i;
+      OP_NEQL : alu_zero = opr_a_i != opr_b_i;
+      OP_ULT : alu_zero = opr_a_i <= opr_b_i;
+      OP_UGT : alu_zero = opr_a_i >= opr_b_i;
+
       OP_JAL : alu_res = pc_i + 4;
       OP_LUI : alu_res = opr_b_i << 12;
       OP_AUIPC : alu_res = pc_i + (opr_b_i << 12);
@@ -109,7 +121,7 @@ module rv_alu
   // Output assignment
   // --------------------------------------------------------
   assign alu_res_o = alu_res;
-  assign alu_zero_o = alu_res[0];
+  assign alu_zero_o = alu_zero;
 
 endmodule
 

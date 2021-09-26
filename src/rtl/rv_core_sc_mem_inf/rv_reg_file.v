@@ -13,6 +13,7 @@
 
 module rv_reg_file (
   input   wire          clk,
+  input   wire          rst,
   input   wire [4:0]    rs1_addr_i,
   input   wire [4:0]    rs2_addr_i,
   input   wire [4:0]    rd_addr_i,
@@ -43,14 +44,21 @@ module rv_reg_file (
   reg [31:0] rs2_data;
   
   always_comb begin
-    rs1_data = regfile[rs1_addr_i];
-    rs2_data = regfile[rs2_addr_i];
+      rs1_data = regfile[rs1_addr_i];
+      rs2_data = regfile[rs2_addr_i];
   end
   
   always_ff @(posedge clk) begin
-    if(wr_en_i & rd_addr_i != 0) begin
-      regfile[rd_addr_i] <= wr_data_i;
-    end
+      if(rst) begin
+          for(integer i=0; i<32; i=i+1) begin
+              regfile[i] <= 32'b0;
+          end
+      end
+      else begin
+          if(wr_en_i & rd_addr_i != 0) begin
+            regfile[rd_addr_i] <= wr_data_i;
+          end
+      end
   end
   
 

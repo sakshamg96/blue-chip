@@ -165,6 +165,8 @@ module testbench(
 
     end
 
+    reg [5:0] TESTID_TB = 0;
+
     //
     // SIMULATION TASKS
     //
@@ -173,11 +175,11 @@ module testbench(
     function LOAD_TEST;
         input bit [5:0] TESTID;
         begin
-            //Reset_n = 0;
-            //#10;
+            TESTID_TB = TESTID;
             for (i=0; i<= MEMORY_DEPTH; i=i+1) begin
                 MEMORY[i] = 0;
             end
+            $display("\nLoading Test with TESTID: %0d\n", TESTID);
             case(TESTID)
                 
                 // R-R [0:9] 
@@ -231,47 +233,33 @@ module testbench(
                 `S_SW:    $readmemh("mem/hex/sw.S.hex"   ,MEMORY);
 
             endcase
-            $writememh("mem_out.txt"  ,MEMORY);
+            //$writememh("mem_out.txt"  ,MEMORY);
         end
     endfunction // LOAD_TEST
 
-    export "DPI-C" task EVAL_TEST;   
+    export "DPI-C" function EVAL_TEST;   
     //integer t;
-    task EVAL_TEST;
+    function EVAL_TEST;
         input bit [5:0] TESTID;
         output bit PASS_ST;
         begin
             PASS_ST = 0;
-            //Reset_n = 1;
-            //for(t=0; t<=1000000; t=t+1) begin
-            //    @(posedge clock) begin
-                    
-                    // Check if test pass
-                    // pass condition: GP=1 , A7=93, A0=0
-                    if((UUT.rv_reg_file_0.regfile[3] == 1) &&   
-                       (UUT.rv_reg_file_0.regfile[17] == 93) && 
-                       (UUT.rv_reg_file_0.regfile[10] == 0))    
-                    begin
-                        $display("TEST PASSED; ID: %0d", TESTID);
-                        PASS_ST = 1;
-                        //t=1000000;
-    
-                    end else if (Exception == 1) begin
-                        $display("EXCEPTION ASSERTED, TEST FAILED");
-                        $display("FAILED TEST ID: %0d", TESTID);
-                        $finish;
-                    
-                    end
-                    //else if (t==999999) begin
-                    //    $display("TEST FAILED: TIMED OUT");
-                    //    $display("FAILED TEST ID: %0d", TESTID);
-                    //    $finish;
-                    //end
-                    
-                //end
-            //end
+            
+            // Check if test pass
+            // pass condition: GP=1 , A7=93, A0=0
+            if((UUT.rv_reg_file_0.regfile[3] == 1) &&   
+               (UUT.rv_reg_file_0.regfile[17] == 93) && 
+               (UUT.rv_reg_file_0.regfile[10] == 0))    
+            begin
+                $display("\nTEST PASSED; ID: %0d", TESTID);
+                PASS_ST = 1;
+            end else if (Exception == 1) begin
+                $display("EXCEPTION ASSERTED, TEST FAILED");
+                $display("FAILED TEST ID: %0d", TESTID);
+                $finish;
+            end
         end
-    endtask // EVAL_TEST
+    endfunction // EVAL_TEST
 
 
     //
