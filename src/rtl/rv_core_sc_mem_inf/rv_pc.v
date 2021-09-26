@@ -53,7 +53,7 @@ module rv_pc
     assign imm_gen_sign[12:0] = imm_gen_i[12:0]<<1;
 
     assign PCIncr = PCIncrSel_i ? (opr_a_i + {{19{imm_gen_sign[12]}},imm_gen_sign}) 
-                                    : (instr_cntr + {{19{imm_gen_sign[12]}},imm_gen_sign});     //-4 because instr_cnt already incremented during fetch
+                                    : (instr_cntr + {{19{imm_gen_sign[12]}},imm_gen_sign});
 
     assign instr_cntr_c = rst_sync == 1'b1 ? 'b0 : (branch_en_i & (alu_zero_i | !b_type_instr_i) ) ? PCIncr : (instr_cntr + 4);
 
